@@ -623,28 +623,87 @@ class Canister {
   }
 
   createCanister() {
-    const geometry = new THREE.BoxGeometry(2, 3, 4, 32);
+    const thickness = 0.2;
+    const width = 2.5;
+    const height = 4;
+    const depth = 3;
+
     const material = new THREE.MeshStandardMaterial({
-      color: "grey",
+      color: new THREE.Color("#adb5bd"),
+      side: THREE.DoubleSide,
       metalness: 0.8,
       roughness: 0.5,
     });
-    this.canister = new THREE.Mesh(geometry, material);
 
-    // Place canister on top of the table
-    this.canister.position.set(
-      this.position.x,
-      this.position.y + 4, // Adjusted to be on top of the table
+    // Create individual faces
+    const leftFace = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, height, depth),
+      material
+    );
+    const rightFace = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, height, depth),
+      material
+    );
+    const topFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width, thickness, depth),
+      material
+    );
+    const bottomFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width, thickness, depth),
+      material
+    );
+    const backFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width, height, thickness),
+      material
+    );
+
+    // Position each face relative to the instance's position
+    leftFace.position.set(
+      this.position.x - width / 2,
+      this.position.y,
       this.position.z
     );
+    rightFace.position.set(
+      this.position.x + width / 2,
+      this.position.y,
+      this.position.z
+    );
+    topFace.position.set(
+      this.position.x,
+      this.position.y + height / 2 - thickness / 2,
+      this.position.z
+    );
+    bottomFace.position.set(
+      this.position.x,
+      this.position.y - height / 2 + thickness / 2,
+      this.position.z
+    );
+    backFace.position.set(
+      this.position.x,
+      this.position.y,
+      this.position.z - depth / 2 + thickness / 2
+    );
+
+    // Group all faces into a single canister
+    this.canister = new THREE.Group();
+    this.canister.add(leftFace, rightFace, topFace, bottomFace, backFace);
+
+    // Place the canister on top of the table
+    this.canister.position.set(
+      this.position.x,
+      this.position.y + 4,
+      this.position.z
+    );
+
+    // Add the canister to the scene
     this.scene.add(this.canister);
   }
 }
 
-const initialX = -4.0;
+const initialX = -1.9;
 const y = 1.5;
 const z = 0;
-const distance = 2.8;
+const distance = 1.8;
 
 const canister1 = new Canister(scene, { x: initialX, y: y, z: z });
 const canister2 = new Canister(scene, { x: initialX + distance, y: y, z: z });
@@ -655,11 +714,6 @@ const canister3 = new Canister(scene, {
 });
 const canister4 = new Canister(scene, {
   x: initialX + 3 * distance,
-  y: y,
-  z: z,
-});
-const canister5 = new Canister(scene, {
-  x: initialX + 4 * distance,
   y: y,
   z: z,
 });
