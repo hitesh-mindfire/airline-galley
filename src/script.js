@@ -6,7 +6,7 @@ import GUI from "lil-gui";
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
 const camera = new THREE.PerspectiveCamera(
-  85,
+  95,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
@@ -21,6 +21,7 @@ document.body.appendChild(renderer.domElement);
 
 // Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 4); // Soft light
 scene.add(ambientLight);
@@ -46,6 +47,8 @@ scene.add(ground);
 // Set camera position for side view
 camera.position.set(0, 0, 10);
 camera.lookAt(0, 3, 0);
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load("./textures/tableTexture.webp");
 
 // Trolley Class (unchanged)
 class Trolley {
@@ -539,9 +542,10 @@ class Table {
     // Table top
     const tableTopGeometry = new THREE.BoxGeometry(14, 0.25, 5);
     const tableTopMaterial = new THREE.MeshStandardMaterial({
-      color: "#6c757d",
+      // color: "#e9ecef",
       metalness: 0.8,
       roughness: 0.5,
+      map: texture,
     });
     this.tableTop = new THREE.Mesh(tableTopGeometry, tableTopMaterial);
     this.tableTop.position.set(
@@ -556,9 +560,12 @@ class Table {
     // Left side of the table
     const leftGeometry = new THREE.BoxGeometry(0.25, 7.5, 5);
     const leftMaterial = new THREE.MeshStandardMaterial({
-      color: "#6c757d",
+      // color: "#e9ecef",
       metalness: 0.8,
       roughness: 0.5,
+      transparent: true,
+      opacity: 0.9,
+      map: texture,
     });
     this.leftSide = new THREE.Mesh(leftGeometry, leftMaterial);
     this.leftSide.position.set(
@@ -573,9 +580,12 @@ class Table {
     // Right side of the table
     const rightGeometry = new THREE.BoxGeometry(0.25, 7.5, 5);
     const rightMaterial = new THREE.MeshStandardMaterial({
-      color: "#6c757d",
+      // color: "#e9ecef",
       metalness: 0.8,
       roughness: 0.5,
+      transparent: true,
+      opacity: 0.9,
+      map: texture,
     });
     this.rightSide = new THREE.Mesh(rightGeometry, rightMaterial);
     this.rightSide.position.set(
@@ -590,9 +600,12 @@ class Table {
     // Back side of the table
     const backGeometry = new THREE.BoxGeometry(22, 13, 0.25);
     const backMaterial = new THREE.MeshStandardMaterial({
-      color: "#6c757d",
+      // color: "#e9ecef",
       metalness: 0.8,
       roughness: 0.5,
+      transparent: true,
+      opacity: 0.9,
+      map: texture,
     });
     this.backSide = new THREE.Mesh(backGeometry, backMaterial);
     this.backSide.position.set(
@@ -615,11 +628,13 @@ class Canister {
   constructor(scene, position) {
     this.scene = scene;
     this.position = position;
+    this.isOpen = false; // Track the state of the door (open or closed)
     this.init();
   }
 
   init() {
     this.createCanister();
+    this.addClickEvent(); // Add the click event for the door
   }
 
   createCanister() {
@@ -628,34 +643,71 @@ class Canister {
     const height = 4;
     const depth = 3;
 
-    const material = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#adb5bd"),
+    const defaultMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#ced4da"),
       side: THREE.DoubleSide,
       metalness: 0.8,
       roughness: 0.5,
     });
 
-    // Create individual faces
+    const frontMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#f8f9fa"),
+      side: THREE.DoubleSide,
+      metalness: 0.8,
+      roughness: 0.5,
+    });
+
+    const redMaterial = defaultMaterial.clone();
+    redMaterial.color = new THREE.Color("red");
+
+    const greenMaterial = defaultMaterial.clone();
+    greenMaterial.color = new THREE.Color("green");
+
     const leftFace = new THREE.Mesh(
       new THREE.BoxGeometry(thickness, height, depth),
-      material
+      defaultMaterial
     );
     const rightFace = new THREE.Mesh(
       new THREE.BoxGeometry(thickness, height, depth),
-      material
+      defaultMaterial
     );
     const topFace = new THREE.Mesh(
       new THREE.BoxGeometry(width, thickness, depth),
-      material
+      defaultMaterial
     );
     const bottomFace = new THREE.Mesh(
       new THREE.BoxGeometry(width, thickness, depth),
-      material
+      defaultMaterial
     );
     const backFace = new THREE.Mesh(
       new THREE.BoxGeometry(width, height, thickness),
-      material
+      defaultMaterial
     );
+
+    // Create the front door face
+    const frontFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width - 0.2, height - 1.2, thickness),
+      frontMaterial
+    );
+    const handleGeometry = new THREE.BoxGeometry(0.2, 0.5, 0.1);
+    const doorHandle = new THREE.Mesh(handleGeometry, defaultMaterial);
+    doorHandle.position.set(-width / 2 - 0.8, 0, thickness / 2 + 0.1);
+
+    // Create the new static face above the door
+    const topFrontFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width - 0.2, 0.8, thickness), // Adjust height as needed
+      frontMaterial
+    );
+
+    // Attach the indicators to the new static face
+    const indicatorGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.01);
+    const greenIndicator = new THREE.Mesh(indicatorGeometry, greenMaterial);
+    greenIndicator.position.set(-0.8, 0.2, thickness / 2 + 0.05);
+
+    const redIndicator = new THREE.Mesh(indicatorGeometry, redMaterial);
+    redIndicator.position.set(-0.8, 0, thickness / 2 + 0.05);
+
+    topFrontFace.add(greenIndicator, redIndicator);
 
     // Position each face relative to the instance's position
     leftFace.position.set(
@@ -684,19 +736,69 @@ class Canister {
       this.position.z - depth / 2 + thickness / 2
     );
 
-    // Group all faces into a single canister
-    this.canister = new THREE.Group();
-    this.canister.add(leftFace, rightFace, topFace, bottomFace, backFace);
+    // Position the door and static face group
+    const doorGroup = new THREE.Group();
+    doorGroup.add(frontFace, doorHandle);
+    doorGroup.position.set(
+      this.position.x + width / 2,
+      this.position.y - 0.4,
+      this.position.z + depth / 2 - thickness / 2
+    );
+    frontFace.position.set(-width / 2, 0, 0);
+    console.log(doorGroup, "doorGroup");
+    topFrontFace.position.set(
+      this.position.x,
+      this.position.y + 1.44,
+      this.position.z + depth / 2 - thickness / 2
+    );
 
-    // Place the canister on top of the table
+    this.canister = new THREE.Group();
+    this.canister.add(
+      leftFace,
+      rightFace,
+      topFace,
+      bottomFace,
+      backFace,
+      doorGroup,
+      topFrontFace
+    );
+
+    this.doorGroup = doorGroup;
+
     this.canister.position.set(
       this.position.x,
       this.position.y + 4,
-      this.position.z
+      this.position.z - 0.8
     );
 
-    // Add the canister to the scene
     this.scene.add(this.canister);
+  }
+
+  addClickEvent() {
+    window.addEventListener("click", (event) => {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObject(this.doorGroup.children[0]);
+      if (intersects.length > 0) {
+        this.toggleDoor();
+      }
+    });
+  }
+
+  toggleDoor() {
+    const rotationAngle = this.isOpen ? 0 : Math.PI / 2;
+    gsap.to(this.doorGroup.rotation, {
+      y: rotationAngle,
+      duration: 1,
+      ease: "power2.inOut",
+    });
+    this.isOpen = !this.isOpen;
   }
 }
 
@@ -723,7 +825,7 @@ window.addEventListener("click", onMouseClick);
 
 function animate() {
   requestAnimationFrame(animate);
-
+  controls.update();
   renderer.render(scene, camera);
 }
 
