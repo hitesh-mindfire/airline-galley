@@ -686,7 +686,7 @@ class Canister {
 
     // Create the front door face
     const frontFace = new THREE.Mesh(
-      new THREE.BoxGeometry(width - 0.2, height - 1.2, thickness),
+      new THREE.BoxGeometry(width - 0.21, height - 1.2, thickness),
       frontMaterial
     );
     const handleGeometry = new THREE.BoxGeometry(0.2, 0.5, 0.1);
@@ -695,7 +695,7 @@ class Canister {
 
     // Create the new static face above the door
     const topFrontFace = new THREE.Mesh(
-      new THREE.BoxGeometry(width - 0.2, 0.8, thickness), // Adjust height as needed
+      new THREE.BoxGeometry(width - 0.21, 0.79, thickness + 0.01), // Adjust height as needed
       frontMaterial
     );
 
@@ -748,7 +748,7 @@ class Canister {
     console.log(doorGroup, "doorGroup");
     topFrontFace.position.set(
       this.position.x,
-      this.position.y + 1.44,
+      this.position.y + 1.41,
       this.position.z + depth / 2 - thickness / 2
     );
 
