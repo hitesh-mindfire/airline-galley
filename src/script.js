@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
-// Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xd3d3d3);
 const camera = new THREE.PerspectiveCamera(
@@ -19,19 +18,17 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-// Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 4); // Soft light
+const ambientLight = new THREE.AmbientLight(0xffffff, 4);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Strong light
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(5, 10, 7.5).normalize();
 directionalLight.castShadow = true;
 scene.add(directionalLight);
 
-// Ground plane to receive shadows
 const groundGeometry = new THREE.PlaneGeometry(100, 100);
 const groundMaterial = new THREE.MeshStandardMaterial({
   color: 0x808080,
@@ -44,15 +41,13 @@ ground.position.y = -2.8;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// Set camera position for side view
-camera.position.set(0, 0, 10);
+camera.position.set(0, 2, 13);
 camera.lookAt(0, 3, 0);
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load("./textures/tableTexture.webp");
 
-// Trolley Class (unchanged)
 class Trolley {
-  constructor(scene, position, gui) {
+  constructor(scene, position) {
     this.scene = scene;
     this.position = position;
     this.drawers = [];
@@ -80,9 +75,8 @@ class Trolley {
 
   createDrawer(index) {
     const drawer = new THREE.Group();
-    drawer.userData.trolley = this; // Add a reference to the trolley
+    drawer.userData.trolley = this;
 
-    // Create drawer components
     const drawerHeight = 0.82;
     const drawerDepth = 4.9;
     const drawerWidth = 2.5;
@@ -111,7 +105,7 @@ class Trolley {
     const base = new THREE.Mesh(baseGeometry, baseMaterial);
     base.rotation.x = -Math.PI / 2;
     base.position.y = -drawerHeight / 2;
-    const frontHeight = 0.82; // Reduced height for front face
+    const frontHeight = 0.82;
     const frontGeometry = new THREE.BoxGeometry(drawerWidth, frontHeight, 0);
     const frontMaterial = new THREE.MeshStandardMaterial({
       color: "#66d9ff",
@@ -121,7 +115,6 @@ class Trolley {
     const front = new THREE.Mesh(frontGeometry, frontMaterial);
     front.position.set(0, 0, drawerDepth / 2);
 
-    // Internal sides and outlines
     const internalSideGeometry = new THREE.PlaneGeometry(
       drawerWidth,
       drawerHeight + 0.1
@@ -137,7 +130,6 @@ class Trolley {
     const lside = new THREE.Mesh(lGeometry, sideMaterial);
     lside.position.x = -drawerWidth / 2 + 0.01;
 
-    // Handle geometry
     const handleGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.2);
     const handleMaterial = new THREE.MeshStandardMaterial({
       color: 0x000000,
@@ -145,14 +137,11 @@ class Trolley {
     const handle = new THREE.Mesh(handleGeometry, handleMaterial);
     handle.position.set(0, 0, drawerDepth / 2 + 0.15);
 
-    // drawer.add(side1);
-    // drawer.add(side2);
     drawer.add(base);
     drawer.add(front);
     drawer.add(internalSide);
     drawer.add(rside);
     drawer.add(lside);
-    // drawer.add(handle);
     const gap = 0.1;
     drawer.position.set(0, (index - 2.5) * (drawerHeight + gap), 0.1);
     this.cover.add(drawer);
@@ -161,7 +150,7 @@ class Trolley {
 
   toggleDrawer(index) {
     console.log(index, "index");
-    if (!this.drawers[index]) return; // Ensure the drawer exists
+    if (!this.drawers[index]) return;
 
     const drawer = this.drawers[index];
     const isOpen = this.drawerStates[index];
@@ -173,7 +162,6 @@ class Trolley {
       ease: "power2.inOut",
     });
 
-    // Toggle drawer state
     this.drawerStates[index] = !isOpen;
   }
 
@@ -240,7 +228,6 @@ class Trolley {
     const colorDepth = 4.6;
     const depthInset = 0.01;
 
-    // Front face (Transparent)
     this.frontFace = this.createColoredFace(
       colorWidth,
       colorHeight,
@@ -251,10 +238,9 @@ class Trolley {
         z: 2.5 + depthInset + this.position.z,
       }
     );
-    this.frontFace.material.opacity = 0; // Make the front face fully transparent
-    this.frontFace.material.transparent = true; // Ensure transparency is enabled
+    this.frontFace.material.opacity = 0;
+    this.frontFace.material.transparent = true;
 
-    // Back face (Blue)
     this.backFace = this.createColoredFace(
       colorWidth,
       colorHeight,
@@ -266,7 +252,6 @@ class Trolley {
       }
     );
 
-    // Left face (Blue)
     this.leftFace = this.createColoredFace(
       colorDepth,
       colorHeight,
@@ -279,7 +264,6 @@ class Trolley {
       Math.PI / 2
     );
 
-    // Right face (Blue)
     this.rightFace = this.createColoredFace(
       colorDepth,
       colorHeight,
@@ -320,19 +304,17 @@ class Trolley {
   }
 
   createTray() {
-    // Tray dimensions
     const trayWidth = 3.0;
     const trayHeight = 0.1;
     const trayDepth = 4.9;
     const traySideHeight = 0.5;
 
-    // Tray materials
     const trayMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color("#adb5bd"),
       roughness: 0.8,
       metalness: 0.5,
     });
-    // Back wall of the tray
+
     const trayBackGeometry = new THREE.BoxGeometry(
       trayWidth,
       traySideHeight,
@@ -347,7 +329,6 @@ class Trolley {
     trayBack.castShadow = true;
     trayBack.receiveShadow = true;
 
-    // Front wall of the tray
     const trayFrontGeometry = new THREE.BoxGeometry(
       trayWidth,
       traySideHeight,
@@ -362,7 +343,6 @@ class Trolley {
     trayFront.castShadow = true;
     trayFront.receiveShadow = true;
 
-    // Left wall of the tray
     const trayLeftGeometry = new THREE.BoxGeometry(
       trayHeight,
       traySideHeight,
@@ -377,7 +357,6 @@ class Trolley {
     trayLeft.castShadow = true;
     trayLeft.receiveShadow = true;
 
-    // Right wall of the tray
     const trayRightGeometry = new THREE.BoxGeometry(
       trayHeight,
       traySideHeight,
@@ -392,7 +371,6 @@ class Trolley {
     trayRight.castShadow = true;
     trayRight.receiveShadow = true;
 
-    // Add all tray parts to the scene
     this.scene.add(trayBack);
     this.scene.add(trayFront);
     this.scene.add(trayLeft);
@@ -422,7 +400,6 @@ class Trolley {
       wheel2.rotation.z = Math.PI / 2;
       wheel2.position.y = -3.3;
 
-      // Place the second wheel right next to the first one
       wheel2.position.x =
         wheel1.position.x + (i < 2 ? wheelSpacing : -wheelSpacing);
       wheel2.position.z = wheel1.position.z;
@@ -445,7 +422,7 @@ class Trolley {
       roughness: 0.8,
       metalness: 0.5,
     });
-    // Left paddle
+
     const leftPaddleGeometry = new THREE.BoxGeometry(
       paddleWidth,
       paddleHeight,
@@ -461,7 +438,6 @@ class Trolley {
     leftPaddle.castShadow = true;
     leftPaddle.receiveShadow = true;
 
-    // Right paddle
     const rightPaddleGeometry = new THREE.BoxGeometry(
       paddleWidth,
       paddleHeight,
@@ -491,30 +467,26 @@ class Trolley {
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Array to hold all drawer objects from all trolleys
 const allDrawers = [];
-
-// Function to update the list of all drawers
 function updateAllDrawers() {
-  allDrawers.length = 0; // Clear the array
-  [trolley1, trolley2, trolley3, trolley4].forEach((trolley) => {
+  allDrawers.length = 0;
+  trolleys.forEach((trolley) => {
     allDrawers.push(...trolley.drawers);
   });
 }
 
-// Detect clicks and trigger drawer toggle
 function onMouseClick(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
+
   const intersects = raycaster.intersectObjects(allDrawers);
 
   if (intersects.length > 0) {
+    // Get the clicked drawer
     const clickedDrawer = intersects[0].object.parent;
-    const trolley = [trolley1, trolley2, trolley3, trolley4].find((t) =>
-      t.drawers.includes(clickedDrawer)
-    );
+    const trolley = trolleys.find((t) => t.drawers.includes(clickedDrawer));
     if (trolley) {
       const drawerIndex = trolley.drawers.indexOf(clickedDrawer);
       if (drawerIndex !== -1) {
@@ -539,7 +511,6 @@ class Table {
   }
 
   createTable() {
-    // Table top
     const tableTopGeometry = new THREE.BoxGeometry(14, 0.25, 5);
     const tableTopMaterial = new THREE.MeshStandardMaterial({
       // color: "#e9ecef",
@@ -557,8 +528,7 @@ class Table {
   }
 
   createTableLeft() {
-    // Left side of the table
-    const leftGeometry = new THREE.BoxGeometry(0.25, 7.5, 5);
+    const leftGeometry = new THREE.BoxGeometry(0.25, 7.35, 5);
     const leftMaterial = new THREE.MeshStandardMaterial({
       // color: "#e9ecef",
       metalness: 0.8,
@@ -570,15 +540,14 @@ class Table {
     this.leftSide = new THREE.Mesh(leftGeometry, leftMaterial);
     this.leftSide.position.set(
       this.position.x - 5.25,
-      this.position.y - 2,
+      this.position.y - 2.1,
       this.position.z
     );
     this.scene.add(this.leftSide);
   }
 
   createTableRight() {
-    // Right side of the table
-    const rightGeometry = new THREE.BoxGeometry(0.25, 7.5, 5);
+    const rightGeometry = new THREE.BoxGeometry(0.25, 7.35, 5);
     const rightMaterial = new THREE.MeshStandardMaterial({
       // color: "#e9ecef",
       metalness: 0.8,
@@ -590,15 +559,14 @@ class Table {
     this.rightSide = new THREE.Mesh(rightGeometry, rightMaterial);
     this.rightSide.position.set(
       this.position.x + 8.5,
-      this.position.y - 2,
+      this.position.y - 2.1,
       this.position.z
     );
     this.scene.add(this.rightSide);
   }
 
   createTableBack() {
-    // Back side of the table
-    const backGeometry = new THREE.BoxGeometry(22, 13, 0.25);
+    const backGeometry = new THREE.BoxGeometry(21, 15, 0.25);
     const backMaterial = new THREE.MeshStandardMaterial({
       // color: "#e9ecef",
       metalness: 0.8,
@@ -610,31 +578,55 @@ class Table {
     this.backSide = new THREE.Mesh(backGeometry, backMaterial);
     this.backSide.position.set(
       this.position.x + 2,
-      this.position.y + 0.9,
+      this.position.y + 1.7,
       this.position.z - 2.6
     );
     this.scene.add(this.backSide);
+    this.backSide.castShadow = true;
+    this.backSide.receiveShadow = true;
   }
 }
 
-const trolley1 = new Trolley(scene, { x: -3.3, y: 0, z: 0 }, gui);
-const trolley2 = new Trolley(scene, { x: 0, y: 0, z: 0 }, gui);
-const trolley3 = new Trolley(scene, { x: 3.3, y: 0, z: 0 }, gui);
-const trolley4 = new Trolley(scene, { x: 6.6, y: 0, z: 0 }, gui);
+const trolleyCount = 4; // Number of trolleys
+const spacing = 3.3; // Distance between each trolley
+const startPositionX = -3.3; // Starting X position for the first trolley
 
+const trolleys = []; // Array to store references to all trolleys
+
+// Create trolleys in a loop
+for (let i = 0; i < trolleyCount; i++) {
+  const xPosition = startPositionX + i * spacing; // Calculate x position
+  const trolley = new Trolley(scene, { x: xPosition, y: 0, z: 0 });
+  trolleys.push(trolley); // Add the trolley to the array
+}
 const table = new Table(scene, { x: 0, y: 3, z: 0 });
 
-class Canister {
+function CreateTableTop(scene, position) {
+  const tableTopGeometry = new THREE.BoxGeometry(14, 0.25, 3.4);
+  const tableTopMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.8,
+    roughness: 0.5,
+    map: texture,
+  });
+  let tableTop = new THREE.Mesh(tableTopGeometry, tableTopMaterial);
+  tableTop.position.set(position.x + 1.62, position.y + 1.7, position.z - 0.9);
+  scene.add(tableTop);
+  console.log("hello");
+}
+
+const tableTop = CreateTableTop(scene, { x: 0, y: 7.25, z: 0 });
+
+class LargeCanister {
   constructor(scene, position) {
     this.scene = scene;
     this.position = position;
-    this.isOpen = false; // Track the state of the door (open or closed)
+    this.isOpen = false;
     this.init();
   }
 
   init() {
     this.createCanister();
-    this.addClickEvent(); // Add the click event for the door
+    this.addClickEvent();
   }
 
   createCanister() {
@@ -684,7 +676,6 @@ class Canister {
       defaultMaterial
     );
 
-    // Create the front door face
     const frontFace = new THREE.Mesh(
       new THREE.BoxGeometry(width - 0.21, height - 1.2, thickness),
       frontMaterial
@@ -693,13 +684,11 @@ class Canister {
     const doorHandle = new THREE.Mesh(handleGeometry, defaultMaterial);
     doorHandle.position.set(-width / 2 - 0.8, 0, thickness / 2 + 0.1);
 
-    // Create the new static face above the door
     const topFrontFace = new THREE.Mesh(
-      new THREE.BoxGeometry(width - 0.21, 0.79, thickness + 0.01), // Adjust height as needed
+      new THREE.BoxGeometry(width - 0.21, 0.79, thickness + 0.01),
       frontMaterial
     );
 
-    // Attach the indicators to the new static face
     const indicatorGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.01);
     const greenIndicator = new THREE.Mesh(indicatorGeometry, greenMaterial);
     greenIndicator.position.set(-0.8, 0.2, thickness / 2 + 0.05);
@@ -709,7 +698,6 @@ class Canister {
 
     topFrontFace.add(greenIndicator, redIndicator);
 
-    // Position each face relative to the instance's position
     leftFace.position.set(
       this.position.x - width / 2,
       this.position.y,
@@ -736,7 +724,6 @@ class Canister {
       this.position.z - depth / 2 + thickness / 2
     );
 
-    // Position the door and static face group
     const doorGroup = new THREE.Group();
     doorGroup.add(frontFace, doorHandle);
     doorGroup.position.set(
@@ -767,7 +754,7 @@ class Canister {
 
     this.canister.position.set(
       this.position.x,
-      this.position.y + 4,
+      this.position.y + 3.8,
       this.position.z - 0.8
     );
 
@@ -807,18 +794,176 @@ const y = 1.5;
 const z = 0;
 const distance = 1.8;
 
-const canister1 = new Canister(scene, { x: initialX, y: y, z: z });
-const canister2 = new Canister(scene, { x: initialX + distance, y: y, z: z });
-const canister3 = new Canister(scene, {
-  x: initialX + 2 * distance,
-  y: y,
-  z: z,
-});
-const canister4 = new Canister(scene, {
-  x: initialX + 3 * distance,
-  y: y,
-  z: z,
-});
+for (let i = 0; i < 4; i++) {
+  new LargeCanister(scene, {
+    x: initialX + i * distance,
+    y: y,
+    z: z,
+  });
+}
+
+class SmallCanister {
+  constructor(scene, position) {
+    this.scene = scene;
+    this.position = position;
+    this.isOpen = false;
+    this.init();
+  }
+
+  init() {
+    this.createCanister();
+    this.addClickEvent();
+  }
+
+  createCanister() {
+    const thickness = 0.2;
+    const width = 2.5;
+    const height = 2;
+    const depth = 3;
+
+    const defaultMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#ced4da"),
+      side: THREE.DoubleSide,
+      metalness: 0.8,
+      roughness: 0.5,
+    });
+
+    const frontMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#f8f9fa"),
+      side: THREE.DoubleSide,
+      metalness: 0.8,
+      roughness: 0.5,
+    });
+
+    const leftFace = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, height, depth),
+      defaultMaterial
+    );
+    const rightFace = new THREE.Mesh(
+      new THREE.BoxGeometry(thickness, height, depth),
+      defaultMaterial
+    );
+    const topFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width, thickness, depth),
+      defaultMaterial
+    );
+    const bottomFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width, thickness, depth),
+      defaultMaterial
+    );
+    const backFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width, height, thickness),
+      defaultMaterial
+    );
+
+    const frontFace = new THREE.Mesh(
+      new THREE.BoxGeometry(width - 0.2, height - 0.4, thickness),
+      frontMaterial
+    );
+
+    const handleGeometry = new THREE.BoxGeometry(0.1, 0.3, 0.1);
+    const doorHandle = new THREE.Mesh(handleGeometry, defaultMaterial);
+    doorHandle.position.set(width / 2 + 0.8, 0, thickness / 2 + 0.1);
+
+    leftFace.position.set(
+      this.position.x - width / 2,
+      this.position.y,
+      this.position.z
+    );
+    rightFace.position.set(
+      this.position.x + width / 2,
+      this.position.y,
+      this.position.z
+    );
+    topFace.position.set(
+      this.position.x,
+      this.position.y + height / 2 - thickness / 2,
+      this.position.z
+    );
+    bottomFace.position.set(
+      this.position.x,
+      this.position.y - height / 2 + thickness / 2,
+      this.position.z
+    );
+    backFace.position.set(
+      this.position.x,
+      this.position.y,
+      this.position.z - depth / 2 + thickness / 2
+    );
+
+    const indicatorGeometry = new THREE.BoxGeometry(0.7, 0.2, 0.01);
+    const greenIndicator = new THREE.Mesh(indicatorGeometry, defaultMaterial);
+    greenIndicator.position.set(width / 2, 0.5, thickness / 2 + 0.05);
+    const doorGroup = new THREE.Group();
+    doorGroup.add(frontFace, doorHandle, greenIndicator);
+    doorGroup.position.set(
+      this.position.x - width / 2,
+      this.position.y,
+      this.position.z + depth / 2 - thickness / 2
+    );
+    frontFace.position.set(width / 2, 0, 0);
+
+    this.canister = new THREE.Group();
+    this.canister.add(
+      leftFace,
+      rightFace,
+      topFace,
+      bottomFace,
+      backFace,
+      doorGroup
+    );
+
+    this.doorGroup = doorGroup;
+
+    this.canister.position.set(
+      this.position.x,
+      this.position.y + height / 2,
+      this.position.z
+    );
+
+    this.scene.add(this.canister);
+  }
+
+  addClickEvent() {
+    window.addEventListener("click", (event) => {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObject(this.doorGroup.children[0]);
+      if (intersects.length > 0) {
+        this.toggleDoor();
+      }
+    });
+  }
+
+  toggleDoor() {
+    const rotationAngle = this.isOpen ? 0 : -Math.PI / 2;
+    gsap.to(this.doorGroup.rotation, {
+      y: rotationAngle,
+      duration: 1,
+      ease: "power2.inOut",
+    });
+    this.isOpen = !this.isOpen;
+  }
+}
+
+const initial1X = -1.9;
+const y1 = 4.5;
+const z1 = 0;
+const distance1 = 1.36;
+
+for (let i = 0; i < 5; i++) {
+  new SmallCanister(scene, {
+    x: initial1X + i * distance1,
+    y: y1,
+    z: z1 - 0.4,
+  });
+}
 
 updateAllDrawers();
 window.addEventListener("click", onMouseClick);
