@@ -47,6 +47,8 @@ const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load("./textures/tableTexture.webp");
 
 class Trolley {
+  static activeTrolley = null;
+
   constructor(scene, position) {
     this.scene = scene;
     this.position = position;
@@ -60,6 +62,10 @@ class Trolley {
     this.rightFace = null;
     this.colors = { blue: "#040449", lightBlue: "#00ace6" };
 
+    this.isMovedOut = false;
+    this.moveDistance = 4.7;
+    this.trolleyGroup = new THREE.Group();
+    this.scene.add(this.trolleyGroup);
     this.init();
   }
 
@@ -71,6 +77,16 @@ class Trolley {
     for (let i = 0; i < 6; i++) {
       this.createDrawer(i);
     }
+    this.trolleyGroup.add(
+      this.cover,
+      this.frontFace,
+      this.backFace,
+      this.leftFace,
+      this.rightFace
+    );
+    this.trays.forEach((tray) => this.trolleyGroup.add(tray));
+    this.wheels.forEach((wheel) => this.trolleyGroup.add(wheel));
+    this.paddles.forEach((paddle) => this.trolleyGroup.add(paddle));
   }
 
   createDrawer(index) {
@@ -151,7 +167,14 @@ class Trolley {
   toggleDrawer(index) {
     console.log(index, "index");
     if (!this.drawers[index]) return;
-
+    if (!this.isMovedOut) {
+      console.log("Cannot open drawer. Trolley is not moved out.");
+      return;
+    }
+    if (Trolley.activeTrolley !== this) {
+      console.log("Cannot open drawer, another trolley is active.");
+      return;
+    }
     const drawer = this.drawers[index];
     const isOpen = this.drawerStates[index];
     const targetPosition = isOpen ? 0.1 : this.maxDrawerOpenPosition;
@@ -219,7 +242,7 @@ class Trolley {
     //   face.shadowBias = -0.005;
     // });
 
-    this.scene.add(this.cover);
+    // this.scene.add(this.cover);
   }
 
   createColoredFaces() {
@@ -326,9 +349,10 @@ class Trolley {
       this.position.y + 4.25,
       this.position.z - trayDepth / 2
     );
+
     trayBack.castShadow = true;
     trayBack.receiveShadow = true;
-
+    this.trolleyGroup.add(trayBack);
     const trayFrontGeometry = new THREE.BoxGeometry(
       trayWidth,
       traySideHeight,
@@ -342,7 +366,7 @@ class Trolley {
     );
     trayFront.castShadow = true;
     trayFront.receiveShadow = true;
-
+    this.trolleyGroup.add(trayFront);
     const trayLeftGeometry = new THREE.BoxGeometry(
       trayHeight,
       traySideHeight,
@@ -356,6 +380,7 @@ class Trolley {
     );
     trayLeft.castShadow = true;
     trayLeft.receiveShadow = true;
+    this.trolleyGroup.add(trayLeft);
 
     const trayRightGeometry = new THREE.BoxGeometry(
       trayHeight,
@@ -370,13 +395,36 @@ class Trolley {
     );
     trayRight.castShadow = true;
     trayRight.receiveShadow = true;
-
-    this.scene.add(trayBack);
-    this.scene.add(trayFront);
-    this.scene.add(trayLeft);
-    this.scene.add(trayRight);
+    this.trolleyGroup.add(trayRight);
+    this.trays = [trayBack, trayFront, trayLeft, trayRight];
+    // this.scene.add(trayBack, trayFront, trayLeft, trayRight);
   }
 
+  toggleTrolleyMovement() {
+    // Condition 2: Allow only one trolley to be moved out at a time
+    if (Trolley.activeTrolley && !this.isMovedOut) {
+      console.log("Another trolley is already moved out.");
+      return;
+    }
+
+    const targetZ = this.isMovedOut
+      ? this.position.z
+      : this.position.z + this.moveDistance;
+
+    gsap.to(this.trolleyGroup.position, {
+      z: targetZ,
+      duration: 1,
+      ease: "power2.inOut",
+      onComplete: () => {
+        this.isMovedOut = !this.isMovedOut;
+        if (this.isMovedOut) {
+          Trolley.activeTrolley = this; // Set this as the active trolley
+        } else {
+          Trolley.activeTrolley = null; // Clear the active trolley when moved back
+        }
+      },
+    });
+  }
   addWheels() {
     const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 32);
     const wheelMaterial = new THREE.MeshStandardMaterial({
@@ -385,7 +433,7 @@ class Trolley {
       metalness: 0.5,
     });
     const wheelSpacing = 0.24;
-
+    this.wheels = [];
     for (let i = 0; i < 4; i++) {
       // First wheel
       const wheel1 = new THREE.Mesh(wheelGeometry, wheelMaterial);
@@ -422,7 +470,7 @@ class Trolley {
       roughness: 0.8,
       metalness: 0.5,
     });
-
+    this.paddle = [];
     const leftPaddleGeometry = new THREE.BoxGeometry(
       paddleWidth,
       paddleHeight,
@@ -458,12 +506,21 @@ class Trolley {
       roughness: 0.8,
       metalness: 0.5,
     });
-
-    this.scene.add(leftPaddle);
-    this.scene.add(rightPaddle);
+    this.paddles = [leftPaddle, rightPaddle];
   }
 }
 
+const trolleyCount = 4;
+const spacing = 3.3;
+const startPositionX = -3.3;
+
+const trolleys = [];
+
+for (let i = 0; i < trolleyCount; i++) {
+  const xPosition = startPositionX + i * spacing;
+  const trolley = new Trolley(scene, { x: xPosition, y: 0, z: 0 });
+  trolleys.push(trolley);
+}
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
@@ -475,22 +532,41 @@ function updateAllDrawers() {
   });
 }
 
+const allTrays = [];
+
+function updateAllTrays() {
+  allTrays.length = 0;
+  trolleys.forEach((trolley) => {
+    allTrays.push(...trolley.trays);
+  });
+}
+
+updateAllTrays();
 function onMouseClick(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
 
-  const intersects = raycaster.intersectObjects(allDrawers);
-
+  const intersects = raycaster.intersectObjects([...allDrawers, ...allTrays]);
   if (intersects.length > 0) {
-    // Get the clicked drawer
-    const clickedDrawer = intersects[0].object.parent;
-    const trolley = trolleys.find((t) => t.drawers.includes(clickedDrawer));
-    if (trolley) {
-      const drawerIndex = trolley.drawers.indexOf(clickedDrawer);
-      if (drawerIndex !== -1) {
-        trolley.toggleDrawer(drawerIndex);
+    const clickedObject = intersects[0].object;
+
+    // Check if a tray was clicked
+    if (allTrays.includes(clickedObject)) {
+      const trolley = trolleys.find((t) => t.trays.includes(clickedObject));
+      if (trolley) {
+        trolley.toggleTrolleyMovement();
+      }
+    } else {
+      // Get the clicked drawer
+      const clickedDrawer = clickedObject.parent;
+      const trolley = trolleys.find((t) => t.drawers.includes(clickedDrawer));
+      if (trolley) {
+        const drawerIndex = trolley.drawers.indexOf(clickedDrawer);
+        if (drawerIndex !== -1) {
+          trolley.toggleDrawer(drawerIndex);
+        }
       }
     }
   }
@@ -587,18 +663,6 @@ class Table {
   }
 }
 
-const trolleyCount = 4; // Number of trolleys
-const spacing = 3.3; // Distance between each trolley
-const startPositionX = -3.3; // Starting X position for the first trolley
-
-const trolleys = []; // Array to store references to all trolleys
-
-// Create trolleys in a loop
-for (let i = 0; i < trolleyCount; i++) {
-  const xPosition = startPositionX + i * spacing; // Calculate x position
-  const trolley = new Trolley(scene, { x: xPosition, y: 0, z: 0 });
-  trolleys.push(trolley); // Add the trolley to the array
-}
 const table = new Table(scene, { x: 0, y: 3, z: 0 });
 
 function CreateTableTop(scene, position) {
