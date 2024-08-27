@@ -46,8 +46,9 @@ camera.lookAt(0, 3, 0);
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load("./textures/tableTexture.webp");
 
-let activeTrolley = null;
 class Trolley {
+  static activeTrolley = null;
+
   constructor(scene, position) {
     this.scene = scene;
     this.position = position;
@@ -170,7 +171,7 @@ class Trolley {
       console.log("Cannot open drawer. Trolley is not moved out.");
       return;
     }
-    if (activeTrolley !== null) {
+    if (Trolley.activeTrolley !== this) {
       console.log("Cannot open drawer, another trolley is active.");
       return;
     }
@@ -401,7 +402,7 @@ class Trolley {
 
   toggleTrolleyMovement() {
     // Condition 2: Allow only one trolley to be moved out at a time
-    if (activeTrolley && !this.isMovedOut) {
+    if (Trolley.activeTrolley && !this.isMovedOut) {
       console.log("Another trolley is already moved out.");
       return;
     }
